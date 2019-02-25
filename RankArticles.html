@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title> Rank These Articles </title>
+        <link rel="shortcut icon" href="../favicon.ico">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    </head>
+    <body>
+        <h1 id = "articleTitle"> </h1>   
+
+        <script>
+            // init() is called when the window is loaded.
+            window.onload = init;
+
+            var articlesSeen = [];
+            var JSONData;
+            var previousElement = articleTitle;
+
+            function init() {
+                'use strict';
+
+                articlesSeen = JSON.parse(localStorage.getItem("articlesSeen"));
+                
+                //if maximum number of items to be rated has not been reached (3)
+                var length;
+                if (articlesSeen === null) {
+                    length = 0;
+                    articlesSeen = [];
+                } else {
+                    length = articlesSeen.length;
+                }
+                
+                if (length <= 3) {
+                    
+                    do {
+                    //generate an integer 1-5 and append to article name
+                    var fileName = "article-" + (1 + Math.floor(Math.random() * 5)) + ".json";
+                    //loop until a file is found that has not been ranked before (in current set of 3)
+                    } while (articlesSeen.includes(fileName) === true);
+                    
+                    //add article fileName to array of seen articles
+                    articlesSeen.push(fileName);
+                    
+                    // create a function to handle the downloaded json file
+                    var xmlhttp = new XMLHttpRequest();
+                    
+                    // send a request to download the json file
+                    // this will call the function bellow once the file is downloaded
+                    xmlhttp.open("GET", fileName, true);
+                    xmlhttp.send();
+                    
+                    //when the file is ready, the JSONData is retrieved from the .json file
+                    xmlhttp.onreadystatechange = function () {
+                    if (this.readyState === 4 && this.status === 200) {
+                        JSONData = JSON.parse(this.responseText);
+                        react();
+                    }
+                };
+                } else {
+                    //load ranking page
+                    react();
+                }
+            }
+            
+            function react() {
+                'use strict';
+
+                //if the required number of articles to be ranked has not been reached
+                if (articlesSeen.length <= 3) {
+                
+                //Display JSON file
+                document.getElementById("articleTitle").innerHTML = JSONData.title;
+                articleTitle.style.fontSize = "50px"
+                const br = document.createElement("br");
+                previousElement.appendChild(br);
+
+                for (var i = 0; i < JSONData.body.length; i++) {
+                    switch (JSONData.body[i].type) {
+                        case "heading":
+                            const heading = document.createElement("h6");
+                            heading.style.fontSize = "35px";
+                            heading.textContent = JSONData.body[i].model.text;
+                            previousElement.appendChild(heading);
+                            previousElement = heading;
+                            break;
+                        case "paragraph":
+                            const paragraph = document.createElement("p");
+                            paragraph.style.fontSize = "20px";
+                            paragraph.textContent = JSONData.body[i].model.text;
+                            previousElement.appendChild(paragraph);
+                            previousElement = paragraph;
+                            break;
+                        case "image":
+                            const imageDiv = document.createElement("div");
+                            const image = document.createElement("img");
+                            image.src = JSONData.body[i].model.url;
+                            image.alt = JSONData.body[i].model.altText;
+                            image.height = JSONData.body[i].model.height;
+                            image.width = JSONData.body[i].model.width;
+
+                            imageDiv.appendChild(image);
+                            previousElement.appendChild(imageDiv);
+                            previousElement = imageDiv;
+                            break;
+                        case "list":
+
+                            const listDiv = document.createElement("div");
+                            if (JSONData.body[i].model.type === "unordered") {
+                                //unordered list
+                                var list = document.createElement("ul");
+                            } else {
+                                //ordered list
+                                var list = document.createElement("ol");
+                            }
+                            list.style.fontSize = "20px"
+                            
+                            for (var n = 0; n < JSONData.body[i].model.items.length; n++) {
+                                //create a list element, fill it with text and add it to the list
+                                const li = document.createElement("li");
+                                const text = document.createTextNode(JSONData.body[i].model.items[n]);
+                                li.appendChild(text);
+                                list.appendChild(li);
+                            }
+                            listDiv.appendChild(list)
+                            previousElement.appendChild(listDiv);
+                            previousElement = listDiv;
+                            break;
+                    }  
+                }
+
+                previousElement.appendChild(br);
+
+                const button = document.createElement("button");
+                button.innerHTML = "Next Article";
+                previousElement.appendChild(button);
+
+                button.addEventListener("click", function () {
+                    //store values for page reset
+                    localStorage.setItem("articlesSeen", JSON.stringify(articlesSeen));
+                    document.location.reload();
+                });
+                
+                } else {
+                    document.getElementById("articleTitle").innerHTML = "Rank These Articles (1 is best, 3 is worst)";
+                    articleTitle.style.fontSize = "50px"
+                    const br = document.createElement("br");
+                    previousElement.appendChild(br);
+                    
+                    for (var i = 0; i < 3; i++) {
+                        const heading = document.createElement("h6");
+                        heading.style.fontSize = "35px";
+                        var splitArticleID = articlesSeen[i].split(".");
+                        heading.textContent = splitArticleID[0];
+                        previousElement.appendChild(heading);
+                        previousElement = heading;
+                        
+                        var div = document.createElement("div");
+                        for (var n = 1; n <4; n++) {
+                            var radioButton = document.createElement("input");
+                            radioButton.setAttribute("type", "radio");
+                            radioButton.setAttribute("id", "radioButton" + i + n);
+                            radioButton.setAttribute("name", articlesSeen[i]);
+                            radioButton.setAttribute("value", n);
+                            
+                            var textNode = document.createTextNode(n);
+                            var label = document.createElement("label");
+                            label.htmlFor = radioButton.id;
+                            label.appendChild(radioButton);
+                            label.appendChild(textNode);
+                            
+                            const br = document.createElement("br");
+                            
+                            div.appendChild(label);
+                            div.appendChild(br);
+                        }
+                        heading.appendChild(div);
+                        //div.setAtribute("id", i);
+                        previousElement = div;
+                    }
+                
+                    const button = document.createElement("button");
+                button.innerHTML = "Submit Ranking";
+                previousElement.appendChild(button);
+
+                button.addEventListener("click", function () {                    
+                    
+                    //check that 2 articles are not given the same rank
+                    var error = false;
+                    for (var n = 1; n < 4; n++) {
+                        if ((document.getElementById("radioButton0" + n).checked  && document.getElementById("radioButton1" + n).checked) ||
+                            (document.getElementById("radioButton0" + n).checked && document.getElementById("radioButton2" + n).checked) ||
+                            (document.getElementById("radioButton1" + n).checked && document.getElementById("radioButton2" + n).checked)) {
+                            
+                            error = true
+                        }   
+                    }
+                    
+                    if (error === false) {
+                    
+                //The following section would contain the post function to write the rankings to a json file.
+                //As explained in the readme file on gitlab, we have not yet covered this in unoversity lectures.
+                //From what I understand, this would require a library (such a JQuery) and would look something similar to this:
+                
+                //for (var i = 0; i < 3; i++) {
+                //  for (var n = 1; n < 4; n++) {
+                //      if (document.getElementByID("radioButton" + i + n).checked) {
+                //          $.ajax({
+                //              "url": Rankings.json,             //(json file that the values would be stored in)
+                //              "method": POST,
+                //              "dataType": "json",
+                //              processData: false,
+                //              "data": JSON.stringify({
+                //                  "ArticleJSON": articlesSeen[i],
+                //                  "Rank": n
+                //              }),
+                //           "success": getHandlingStatus
+                //          });
+                //      }
+                //  }
+                //}
+                
+                //however I have not had the time to try and properly implemement this.
+                    
+                    
+                    
+                    //clear storage and restart process
+                    localStorage.clear();
+                    document.location.reload();
+                    } else {
+                        alert("two articles cannot be given the same rank");
+                    }  
+                });
+                }    
+            }
+        </script>
+    </body>
+</html>
