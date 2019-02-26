@@ -13,7 +13,7 @@ This is the first time that any emails from the BBC have been blocked (perhaps d
 
 This was the important email that stated that all web tests must be completed on GitHub and, with a couple hours left before the deadline, there was no chance that I would be able to rewrite it in GitHub (again, not even covered at university).
 
-Although I am pretty certain that you won't be calling me in for an interview, I have upload the script written in netbeans incase it is of interest to you. At least I have gained some valuable experience in writing JavaScript!
+Although I am pretty certain that you won't be calling me in for an interview, I have upload the script written in netbeans incase it is of interest to you. At least I have gained some valuable experience in writing JavaScript and found areas in which I can further develop!
 
 
 Sorry to be an inconvenience,
